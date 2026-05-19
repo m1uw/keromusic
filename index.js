@@ -6,6 +6,11 @@ const cors = require('cors');
 const app = express();
 app.use(cors());
 
+// Keep-alive endpoint
+app.get('/ping', (req, res) => {
+  res.status(200).send('pong');
+});
+
 const server = http.createServer(app);
 
 // Initialize Socket.io with CORS enabled for any frontend client
