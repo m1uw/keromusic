@@ -40,6 +40,26 @@ app.get('/ping', (req, res) => {
   res.status(200).send('pong');
 });
 
+// Debug endpoint to list files in dist
+app.get('/api/debug-dist', (req, res) => {
+  const fs = require('fs');
+  const distPath = path.join(__dirname, '../dist');
+  try {
+    if (!fs.existsSync(distPath)) {
+      return res.json({ error: 'dist folder does not exist', path: distPath });
+    }
+    const files = fs.readdirSync(distPath);
+    const assetsPath = path.join(distPath, 'assets');
+    let assets = [];
+    if (fs.existsSync(assetsPath)) {
+      assets = fs.readdirSync(assetsPath);
+    }
+    res.json({ files, assets, __dirname, resolved: distPath });
+  } catch (err) {
+    res.json({ error: err.message });
+  }
+});
+
 const server = http.createServer(app);
 
 // Initialize Socket.io with CORS enabled for any frontend client
