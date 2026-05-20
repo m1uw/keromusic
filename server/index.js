@@ -33,6 +33,10 @@ app.get('/api/sync/load/:googleId', (req, res) => {
 });
 
 // Serve Vite frontend production build statically
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
 app.use(express.static(path.join(__dirname, '../dist')));
 
 // Keep-alive endpoint
