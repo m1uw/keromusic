@@ -48,10 +48,10 @@ export default function Topbar({ onSearch, activeTab, setActiveTab }) {
       {/* Clickable Profile Avatar for Customization */}
       <div className="flex items-center gap-3 shrink-0 titlebar-nodrag cursor-pointer mr-6 hover:opacity-85 transition-opacity" onClick={() => setShowProfileModal(true)}>
         {profilePic ? (
-          <img src={profilePic} className="w-8.5 h-8.5 rounded-full border border-white/10 object-cover shadow-md" />
+          <img src={profilePic} className="w-9 h-9 rounded-full border border-white/10 object-cover shadow-md" />
         ) : (
           <div 
-            className="w-8.5 h-8.5 rounded-full flex items-center justify-center text-xs font-black text-black shadow-md"
+            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-black text-black shadow-md"
             style={{ backgroundColor: activeTheme.accent }}
           >
             {username.charAt(0).toUpperCase()}

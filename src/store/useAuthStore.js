@@ -40,6 +40,12 @@ export const useAuthStore = create((set, get) => ({
       } else {
         set({ playlists: initialPlaylists, username: savedUsername, profilePic: savedPic, hiddenSongs: savedHidden });
       }
+    } else {
+      // Fallback for Web Browsers
+      const webPic = localStorage.getItem('kero_profilePic') || '';
+      if (webPic) {
+        set({ profilePic: webPic });
+      }
     }
   },
 
@@ -219,7 +225,11 @@ export const useAuthStore = create((set, get) => ({
 
   setProfilePic: (pic) => {
     set({ profilePic: pic });
-    if (window.electron) window.electron.setSetting('profilePic', pic);
+    if (window.electron) {
+      window.electron.setSetting('profilePic', pic);
+    } else {
+      localStorage.setItem('kero_profilePic', pic);
+    }
     get().saveProfileToCloud();
   },
 

@@ -52,6 +52,44 @@ export default function BottomPlayer({ setActiveTab }) {
     setVolume(parseInt(e.target.value));
   };
 
+  const handleNativeCast = async () => {
+    if (!currentTrack) return;
+    setShowCastMenu(false);
+    try {
+      // 1. Trigger the native browser presentation request (Wi-Fi TVs/Chromecasts)
+      const presentationRequest = new PresentationRequest([
+        `https://www.youtube.com/embed/${currentTrack.id}?autoplay=1`
+      ]);
+      
+      presentationRequest.addEventListener('connectionavailable', (event) => {
+        setIsCasting(true);
+        const partyState = require('../store/usePartyStore').usePartyStore.getState();
+        partyState.showToast(`¡Transmitiendo con éxito a tu TV!`);
+      });
+
+      await presentationRequest.start();
+    } catch (err) {
+      console.warn('Presentation API error or cancelled:', err);
+      
+      // Fallback: If browser Chromecast SDK exists, prompt it natively!
+      if (window.chrome && window.chrome.cast && window.cast && window.cast.framework) {
+        const castContext = window.cast.framework.CastContext.getInstance();
+        try {
+          await castContext.requestSession();
+          setIsCasting(true);
+          const partyState = require('../store/usePartyStore').usePartyStore.getState();
+          partyState.showToast(`¡Conectado a Chromecast Wi-Fi!`);
+        } catch (castErr) {
+          console.error('Chromecast framework session failed:', castErr);
+        }
+      } else {
+        // Double Fallback: tell them to click the Cast option in the browser menu
+        const partyState = require('../store/usePartyStore').usePartyStore.getState();
+        partyState.showToast(`Selecciona 'Transmitir...' en el menú de tu navegador.`);
+      }
+    }
+  };
+
   // Dynamic light mode styles
   const footerBgClass = isLightMode ? 'bg-white border-gray-200 text-black' : 'bg-[#121212]/90 border-borderbg text-brightwhite';
   const textPrimaryClass = isLightMode ? 'text-black' : 'text-brightwhite';
@@ -60,9 +98,9 @@ export default function BottomPlayer({ setActiveTab }) {
   const sliderBgColor = isLightMode ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
 
   return (
-    <div className="px-6 pb-6 pt-2 shrink-0 select-none z-50">
+    <div className="px-0 md:px-6 pb-0 md:pb-6 pt-2 shrink-0 select-none z-50">
       <footer 
-        className={`h-20 flex items-center justify-between px-6 rounded-2xl border transition-all duration-500 shadow-2xl relative ${
+        className={`h-16 md:h-20 flex items-center justify-between px-4 md:px-6 rounded-none md:rounded-2xl border-t md:border transition-all duration-500 shadow-2xl relative ${
           glassmorphism 
             ? 'backdrop-blur-xl bg-[#121212]/75' 
             : isLightMode 
@@ -74,147 +112,176 @@ export default function BottomPlayer({ setActiveTab }) {
           borderColor: isPlaying ? `${activeTheme.accent}20` : undefined
         }}
       >
-      
-      {/* 1. Active Track Details */}
-      <div className="flex items-center gap-4 w-[30%] min-w-[200px]">
-        {currentTrack ? (
-          <>
-            <img 
-              src={currentTrack.thumbnail} 
-              alt={currentTrack.title}
-              className="w-12 h-12 rounded-lg object-cover border border-white/5 shadow-premium shadow-black/40 hover:scale-105 transition-transform duration-300"
-            />
-            <div className="flex flex-col truncate max-w-[150px]">
-              <span className={`text-xs font-semibold truncate hover:underline cursor-pointer ${textPrimaryClass}`}>
-                {currentTrack.title}
-              </span>
-              <span className={`text-[10px] truncate hover:underline cursor-pointer ${textSecondaryClass}`}>
-                {currentTrack.artist}
-              </span>
-            </div>
-            
-            <button
-              onClick={() => likeSong(currentTrack)}
-              className={`p-1 rounded-lg hover:bg-white/5 transition-all ml-1 shrink-0 ${isLightMode ? 'text-gray-500 hover:text-black' : 'text-lightgray hover:text-brightwhite'}`}
-            >
-              <Heart 
-                className={`w-4 h-4 transition-transform ${isLiked ? 'text-red-500 fill-red-500 scale-110' : ''}`} 
-              />
-            </button>
-          </>
-        ) : (
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-lg bg-black/5 border border-white/5 flex items-center justify-center">
-              <span className="opacity-40 text-[10px]">Empty</span>
-            </div>
-            <div className="flex flex-col">
-              <span className={`text-xs font-medium ${textSecondaryClass}`}>No track active</span>
-              <span className="text-[9px] opacity-40">Pick a song from Home</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* 2. Central Playback Progress & Control Knobs */}
-      <div className="flex flex-col items-center gap-1.5 w-[40%] max-w-[600px]">
-        {/* Knobs */}
-        <div className="flex items-center gap-5">
-          {/* Shuffle */}
-          <button
-            onClick={toggleShuffle}
-            title="Shuffle"
-            className={`p-1.5 rounded-lg transition-colors ${controlBtnClass}`}
-          >
-            <Shuffle className={`w-4 h-4 ${shuffle ? 'scale-110' : ''}`} style={shuffle ? { color: activeTheme.accent } : {}} />
-          </button>
-
-          {/* Prev */}
-          <button
-            onClick={prev}
-            disabled={!currentTrack}
-            className={`p-1.5 rounded-lg active:scale-95 disabled:opacity-30 ${controlBtnClass}`}
-          >
-            <SkipBack className="w-4 h-4 fill-current" />
-          </button>
-
-          {/* Play/Pause Main Circle */}
-          <button
-            onClick={togglePlay}
-            disabled={!currentTrack}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-black active:scale-90 hover:scale-105 transition-all shadow shadow-black/20 disabled:opacity-40"
+        {/* Mobile progress line */}
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-white/10 md:hidden">
+          <div 
+            className="h-full transition-all duration-300"
             style={{ 
-              backgroundColor: activeTheme.accent
-            }}
-          >
-            {isPlaying ? (
-              <Pause className="w-4 h-4 fill-black text-black" />
-            ) : (
-              <Play className="w-4 h-4 fill-black text-black ml-0.5" />
-            )}
-          </button>
-
-          {/* Next */}
-          <button
-            onClick={next}
-            disabled={!currentTrack}
-            className={`p-1.5 rounded-lg active:scale-95 disabled:opacity-30 ${controlBtnClass}`}
-          >
-            <SkipForward className="w-4 h-4 fill-current" />
-          </button>
-
-          {/* Repeat */}
-          <button
-            onClick={toggleRepeat}
-            title={`Repeat mode: ${repeatMode}`}
-            className={`p-1.5 rounded-lg transition-colors ${controlBtnClass}`}
-          >
-            <RotateCcw 
-              className={`w-4 h-4 ${repeatMode !== 'off' ? 'scale-110' : ''}`} 
-              style={repeatMode !== 'off' ? { color: activeTheme.accent } : {}}
-            />
-          </button>
-        </div>
-
-        {/* Timeline Progress Slider */}
-        <div className="flex items-center gap-3 w-full">
-          <span className={`text-[10px] tabular-nums w-8 text-right ${textSecondaryClass}`}>
-            {formatTime(progress)}
-          </span>
-          
-          <input
-            type="range"
-            min="0"
-            max={duration || 100}
-            value={progress}
-            onChange={handleTimelineChange}
-            disabled={!currentTrack}
-            className="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors"
-            style={{
-              background: `linear-gradient(to right, ${activeTheme.accent} 0%, ${activeTheme.accent} ${
-                duration ? (progress / duration) * 100 : 0
-              }%, ${sliderBgColor} ${
-                duration ? (progress / duration) * 100 : 0
-              }%, ${sliderBgColor} 100%)`
+              backgroundColor: activeTheme.accent,
+              width: `${duration ? (progress / duration) * 100 : 0}%` 
             }}
           />
-
-          <span className={`text-[10px] tabular-nums w-8 text-left ${textSecondaryClass}`}>
-            {formatTime(duration)}
-          </span>
         </div>
-      </div>
+      
+        {/* 1. Active Track Details */}
+        <div className="flex items-center justify-between w-full md:w-[30%] md:min-w-[200px]">
+          {currentTrack ? (
+            <div className="flex items-center gap-3 overflow-hidden flex-1">
+              <img 
+                src={currentTrack.thumbnail} 
+                alt={currentTrack.title}
+                className="w-10 h-10 md:w-12 md:h-12 rounded-lg object-cover border border-white/5 shadow-premium shadow-black/40 hover:scale-105 transition-transform duration-300 shrink-0"
+              />
+              <div className="flex flex-col truncate max-w-[140px] md:max-w-[150px]">
+                <span className={`text-xs font-semibold truncate hover:underline cursor-pointer ${textPrimaryClass}`}>
+                  {currentTrack.title}
+                </span>
+                <span className={`text-[10px] truncate hover:underline cursor-pointer ${textSecondaryClass}`}>
+                  {currentTrack.artist}
+                </span>
+              </div>
+              
+              <button
+                onClick={() => likeSong(currentTrack)}
+                className={`p-1 rounded-lg hover:bg-white/5 transition-all ml-1 shrink-0 ${isLightMode ? 'text-gray-500 hover:text-black' : 'text-lightgray hover:text-brightwhite'}`}
+              >
+                <Heart 
+                  className={`w-3.5 h-3.5 md:w-4 md:h-4 transition-transform ${isLiked ? 'text-red-500 fill-red-500 scale-110' : ''}`} 
+                />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-black/5 border border-white/5 flex items-center justify-center">
+                <span className="opacity-40 text-[10px]">Empty</span>
+              </div>
+              <div className="flex flex-col">
+                <span className={`text-xs font-medium ${textSecondaryClass}`}>No active track</span>
+                <span className="text-[9px] opacity-40">Pick a song</span>
+              </div>
+            </div>
+          )}
 
-      {/* 3. Right Toggles & Mute controls */}
-      <div className="flex items-center gap-3 w-[30%] min-w-[200px] justify-end">
-        {/* Toggle Lyrics */}
-        <button
-          onClick={toggleLyrics}
-          title="Synced Lyrics"
-          className={`p-1 rounded-lg transition-all ${controlBtnClass}`}
-          style={showLyrics ? { color: activeTheme.accent } : {}}
-        >
-          <Mic2 className="w-4 h-4" />
-        </button>
+          {/* Mobile-only Quick Controls */}
+          <div className="flex items-center gap-2 md:hidden">
+            <button
+              onClick={togglePlay}
+              disabled={!currentTrack}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-black"
+              style={{ backgroundColor: activeTheme.accent }}
+            >
+              {isPlaying ? <Pause className="w-4 h-4 fill-black text-black" /> : <Play className="w-4 h-4 fill-black text-black ml-0.5" />}
+            </button>
+            <button
+              onClick={next}
+              disabled={!currentTrack}
+              className={`p-1.5 rounded-lg active:scale-95 disabled:opacity-30 ${controlBtnClass}`}
+            >
+              <SkipForward className="w-4 h-4 fill-current" />
+            </button>
+          </div>
+        </div>
+
+        {/* 2. Central Playback Progress & Control Knobs */}
+        <div className="hidden md:flex flex-col items-center gap-1.5 w-[40%] max-w-[600px]">
+          {/* Knobs */}
+          <div className="flex items-center gap-5">
+            {/* Shuffle */}
+            <button
+              onClick={toggleShuffle}
+              title="Shuffle"
+              className={`p-1.5 rounded-lg transition-colors ${controlBtnClass}`}
+            >
+              <Shuffle className={`w-4 h-4 ${shuffle ? 'scale-110' : ''}`} style={shuffle ? { color: activeTheme.accent } : {}} />
+            </button>
+
+            {/* Prev */}
+            <button
+              onClick={prev}
+              disabled={!currentTrack}
+              className={`p-1.5 rounded-lg active:scale-95 disabled:opacity-30 ${controlBtnClass}`}
+            >
+              <SkipBack className="w-4 h-4 fill-current" />
+            </button>
+
+            {/* Play/Pause Main Circle */}
+            <button
+              onClick={togglePlay}
+              disabled={!currentTrack}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-black active:scale-90 hover:scale-105 transition-all shadow shadow-black/20 disabled:opacity-40"
+              style={{ 
+                backgroundColor: activeTheme.accent
+              }}
+            >
+              {isPlaying ? (
+                <Pause className="w-4 h-4 fill-black text-black" />
+              ) : (
+                <Play className="w-4 h-4 fill-black text-black ml-0.5" />
+              )}
+            </button>
+
+            {/* Next */}
+            <button
+              onClick={next}
+              disabled={!currentTrack}
+              className={`p-1.5 rounded-lg active:scale-95 disabled:opacity-30 ${controlBtnClass}`}
+            >
+              <SkipForward className="w-4 h-4 fill-current" />
+            </button>
+
+            {/* Repeat */}
+            <button
+              onClick={toggleRepeat}
+              title={`Repeat mode: ${repeatMode}`}
+              className={`p-1.5 rounded-lg transition-colors ${controlBtnClass}`}
+            >
+              <RotateCcw 
+                className={`w-4 h-4 ${repeatMode !== 'off' ? 'scale-110' : ''}`} 
+                style={repeatMode !== 'off' ? { color: activeTheme.accent } : {}}
+              />
+            </button>
+          </div>
+
+          {/* Timeline Progress Slider */}
+          <div className="flex items-center gap-3 w-full">
+            <span className={`text-[10px] tabular-nums w-8 text-right ${textSecondaryClass}`}>
+              {formatTime(progress)}
+            </span>
+            
+            <input
+              type="range"
+              min="0"
+              max={duration || 100}
+              value={progress}
+              onChange={handleTimelineChange}
+              disabled={!currentTrack}
+              className="flex-1 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer focus:outline-none transition-colors"
+              style={{
+                background: `linear-gradient(to right, ${activeTheme.accent} 0%, ${activeTheme.accent} ${
+                  duration ? (progress / duration) * 100 : 0
+                }%, ${sliderBgColor} ${
+                  duration ? (progress / duration) * 100 : 0
+                }%, ${sliderBgColor} 100%)`
+              }}
+            />
+
+            <span className={`text-[10px] tabular-nums w-8 text-left ${textSecondaryClass}`}>
+              {formatTime(duration)}
+            </span>
+          </div>
+        </div>
+
+        {/* 3. Right Toggles & Mute controls */}
+        <div className="hidden md:flex items-center gap-3 w-[30%] min-w-[200px] justify-end">
+          {/* Toggle Lyrics */}
+          <button
+            onClick={toggleLyrics}
+            title="Synced Lyrics"
+            className={`p-1 rounded-lg transition-all ${controlBtnClass}`}
+            style={showLyrics ? { color: activeTheme.accent } : {}}
+          >
+            <Mic2 className="w-4 h-4" />
+          </button>
 
         {/* Toggle Queue */}
         <button
@@ -251,29 +318,38 @@ export default function BottomPlayer({ setActiveTab }) {
             <div className={`absolute bottom-full right-0 mb-2 w-56 p-2 rounded-2xl border backdrop-blur-md shadow-2xl z-50 text-xs font-semibold ${
               isLightMode ? 'bg-white border-gray-200 text-black' : 'bg-[#18181c]/95 border-white/5 text-brightwhite'
             }`}>
-              <p className="px-3 py-1.5 text-[10px] opacity-40 uppercase tracking-widest border-b border-white/5">Transmitir a dispositivo</p>
+              <p className="px-3 py-1.5 text-[10px] opacity-40 uppercase tracking-widest border-b border-white/5">Opciones de Transmisión</p>
               <div className="py-1 space-y-0.5">
-                {[
-                  { name: 'Chromecast Salón', type: 'Chromecast' },
-                  { name: 'Smart TV LG (Dormitorio)', type: 'LG WebOS' },
-                  { name: 'Kero Speaker', type: 'Speaker' }
-                ].map((dev, i) => (
-                  <button
-                    key={i}
-                    onClick={() => {
-                      setIsCasting(true);
-                      setShowCastMenu(false);
-                      const partyStore = require('../store/usePartyStore').usePartyStore.getState();
-                      partyStore.showToast(`Conectado a ${dev.name}`);
-                    }}
-                    className={`w-full px-3 py-2 rounded-xl text-left transition-all flex items-center justify-between ${
-                      isLightMode ? 'hover:bg-black/5' : 'hover:bg-white/5'
-                    }`}
-                  >
-                    <span>{dev.name}</span>
-                    <span className="text-[9px] opacity-40 px-1.5 py-0.5 rounded bg-white/5">{dev.type}</span>
-                  </button>
-                ))}
+                <button
+                  onClick={handleNativeCast}
+                  className={`w-full px-3 py-2.5 rounded-xl text-left transition-all flex items-center justify-between ${
+                    isLightMode ? 'hover:bg-black/5 text-black' : 'hover:bg-white/5 text-brightwhite'
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-bold">Buscar TVs en Wi-Fi</span>
+                    <span className="text-[9px] opacity-60">Smart TVs y Chromecast</span>
+                  </div>
+                  <span className="text-[9px] opacity-40 px-1.5 py-0.5 rounded bg-white/5 shrink-0">Wi-Fi</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsCasting(true);
+                    setShowCastMenu(false);
+                    const partyState = require('../store/usePartyStore').usePartyStore.getState();
+                    partyState.showToast("Modo TV Karaoke Activado en este PC");
+                  }}
+                  className={`w-full px-3 py-2.5 rounded-xl text-left transition-all flex items-center justify-between ${
+                    isLightMode ? 'hover:bg-black/5 text-black' : 'hover:bg-white/5 text-brightwhite'
+                  }`}
+                >
+                  <div className="flex flex-col">
+                    <span className="font-bold">Modo TV Karaoke</span>
+                    <span className="text-[9px] opacity-60">Pantalla completa en este PC</span>
+                  </div>
+                  <span className="text-[9px] opacity-40 px-1.5 py-0.5 rounded bg-white/5 shrink-0">PC/HDMI</span>
+                </button>
               </div>
             </div>
           )}

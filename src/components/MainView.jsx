@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Play, Plus, Clock, Flame, Sparkles, Coffee, Heart, Check, Music, Sun, Moon, Sparkle, Sliders, Shield, Library, Store, Zap, Users, Link, Copy, LogOut } from 'lucide-react';
+import { Play, Plus, Clock, Flame, Sparkles, Coffee, Heart, Check, Music, Sun, Moon, Sparkle, Sliders, Shield, Library, Store, Zap, Users, Link, Copy, LogOut, Search, X } from 'lucide-react';
 import { usePlayerStore } from '../store/usePlayerStore';
 import { useThemeStore } from '../store/useThemeStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -664,10 +664,8 @@ export default function MainView({ activeTab, searchResults, selectedPlaylist, s
           {/* Themes Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {[
-              { id: 'default', name: 'Kero Premium', desc: 'Tema por defecto oscuro', dev: 'Kero Team', color: '#1db954' },
-              { id: 'winamp', name: 'Winamp Classic', desc: 'Verde retro y metal', dev: 'Nostalgia', color: '#00ff00' },
-              { id: 'comfy', name: 'Comfy Theme', desc: 'Bordes redondeados suaves', dev: 'NYRI', color: '#ff77ff' },
-              { id: 'dracula', name: 'Dracula', desc: 'Un tema oscuro elegante', dev: 'Zeno', color: '#bd93f9' }
+              { id: 'default', name: 'Kero Premium', desc: 'Tema por defecto oscuro mate', dev: 'Kero Team', color: '#ff0033' },
+              { id: 'glassglow', name: 'Glassy Sunset', desc: 'Cristal translúcido y auroras cálidas', dev: 'Aura Studio', color: '#ff7700' }
             ].map(theme => (
               <div key={theme.id} className={`group ${cardBgClass} rounded-2xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-300 hover:shadow-premium`}>
                 <div className="h-32 w-full flex items-center justify-center relative" style={{ background: `linear-gradient(to bottom right, ${theme.color}40, #111)` }}>
@@ -700,11 +698,10 @@ export default function MainView({ activeTab, searchResults, selectedPlaylist, s
           {/* Extensions List */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { id: 'visualizer-3d', name: 'Visualizador 3D Pro', desc: 'Espectro de barras avanzado reactivo a DSP', ver: 'v1.2.0' },
-              { id: 'hifi-dac', name: 'Filtro Hi-Fi DAC', desc: 'Simulador de Audio de Alta Fidelidad', ver: 'v2.0.1' },
-              { id: 'discord-rich', name: 'Discord Rich Presence', desc: 'Muestra lo que escuchas en tu perfil', ver: 'v1.0.5' },
-              { id: 'lyrics-plus', name: 'Lyrics Plus', desc: 'Letras sincronizadas modo Karaoke', ver: 'v3.1.0' },
-              { id: 'neko-cat', name: 'Neko Mascot', desc: 'Un lindo gatito que persigue tu ratón', ver: 'v1.0.0' }
+              { id: 'visualizer-3d', name: 'Visualizador 3D Real', desc: 'Espectro de barras animado reactivo a audio', ver: 'v1.0.0' },
+              { id: 'hifi-dac', name: 'Filtro DSP Hi-Fi DAC', desc: 'Mejora graves y agudos dinámicos en tiempo real', ver: 'v1.1.2' },
+              { id: 'sleep-timer', name: 'Temporizador de Apagado', desc: 'Pausa la música automáticamente tras un temporizador', ver: 'v1.0.0' },
+              { id: 'neko-cat', name: 'Neko Mascot (Mascota)', desc: 'Un tierno gatito animado que sigue tu puntero', ver: 'v1.0.0' }
             ].map(ext => {
               const isActive = activeExtensions.includes(ext.id);
               return (
@@ -948,22 +945,22 @@ export default function MainView({ activeTab, searchResults, selectedPlaylist, s
                     </div>
 
                     <div className={`p-3 rounded-xl border transition-all flex items-center justify-between ${
-                      layoutSkin === 'winamp' ? 'border-white/20 bg-white/5' : 'border-white/5 hover:border-white/10'
+                      layoutSkin === 'glassglow' ? 'border-white/20 bg-white/5' : 'border-white/5 hover:border-white/10'
                     }`}>
                       <div>
-                        <p className={`text-sm font-semibold ${textPrimaryClass}`}>Winamp Classic (XP)</p>
-                        <p className="text-[10px] opacity-50">Nostalgia metálica y verde neón</p>
+                        <p className={`text-sm font-semibold ${textPrimaryClass}`}>Glassy Sunset</p>
+                        <p className="text-[10px] opacity-50">Efecto cristal translúcido con auroras cálidas</p>
                       </div>
                       <button 
-                        onClick={() => setLayoutSkin('winamp')}
+                        onClick={() => setLayoutSkin('glassglow')}
                         className={`text-xs px-4 py-1.5 rounded-full font-semibold transition-all ${
-                          layoutSkin === 'winamp' 
+                          layoutSkin === 'glassglow' 
                             ? 'bg-white/10 text-white cursor-default'
                             : 'bg-white/5 hover:bg-white/10'
                         }`}
-                        style={layoutSkin === 'winamp' ? { backgroundColor: activeTheme.accent, color: 'black' } : {}}
+                        style={layoutSkin === 'glassglow' ? { backgroundColor: activeTheme.accent, color: 'black' } : {}}
                       >
-                        {layoutSkin === 'winamp' ? 'Activo' : 'Instalar'}
+                        {layoutSkin === 'glassglow' ? 'Activo' : 'Aplicar'}
                       </button>
                     </div>
                   </div>
@@ -977,8 +974,9 @@ export default function MainView({ activeTab, searchResults, selectedPlaylist, s
                   
                   <div className="space-y-2">
                     {[
-                      { id: 'visualizer-3d', name: 'Visualizador 3D Pro', desc: 'Espectro de barras avanzado reactivo a DSP' },
-                      { id: 'hifi-dac', name: 'Filtro Hi-Fi DAC', desc: 'Simulador de Audio de Alta Fidelidad' }
+                      { id: 'visualizer-3d', name: 'Visualizador 3D Real', desc: 'Espectro animado reactivo a audio' },
+                      { id: 'hifi-dac', name: 'Filtro DSP Hi-Fi DAC', desc: 'Mejora graves y agudos en tiempo real' },
+                      { id: 'sleep-timer', name: 'Temporizador de Apagado', desc: 'Pausa tras cuenta regresiva' }
                     ].map(ext => {
                       const isActive = activeExtensions.includes(ext.id);
                       return (

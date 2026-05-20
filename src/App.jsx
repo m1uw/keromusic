@@ -8,6 +8,7 @@ import LyricsPanel from './components/LyricsPanel';
 import QueuePanel from './components/QueuePanel';
 import CompactPlayer from './components/CompactPlayer';
 import NekoCat from './components/NekoCat';
+import SleepTimerWidget from './components/SleepTimerWidget';
 
 import { usePlayerStore } from './store/usePlayerStore';
 import { useThemeStore } from './store/useThemeStore';
@@ -208,13 +209,22 @@ export default function App() {
   useEffect(() => {
     if (window.eqFilters) {
       const bandKeys = ['60', '150', '400', '1000', '3000', '8000', '15000'];
+      const isHiFi = activeExtensions.includes('hifi-dac');
+      
       bandKeys.forEach((key, idx) => {
         if (window.eqFilters[idx]) {
-          window.eqFilters[idx].gain.value = eqEnabled ? (eqGains[key] || 0) : 0;
+          let gainVal = eqEnabled ? (eqGains[key] || 0) : 0;
+          if (isHiFi) {
+            // Hi-Fi DAC: +6dB bass, +5dB high-end clarity
+            if (key === '60' || key === '150') gainVal += 6.0;
+            if (key === '8000' || key === '15000') gainVal += 5.0;
+          }
+          window.eqFilters[idx].gain.value = gainVal;
         }
       });
+      console.log(`[DSP] Equalizer updated. Hi-Fi DAC state: ${isHiFi}`);
     }
-  }, [eqEnabled, eqGains]);
+  }, [eqEnabled, eqGains, activeExtensions]);
 
   // Set up tick timer to synchronise progress timeline
   useEffect(() => {
@@ -362,7 +372,10 @@ export default function App() {
 
           {/* Mobile Bottom Navigation Bar */}
           {isMobile && (
-            <div className="h-16 shrink-0 bg-[#121212]/95 border-t border-white/5 flex items-center justify-around px-4 select-none relative z-50 backdrop-blur-md">
+            <div 
+              className="shrink-0 bg-[#121212]/95 border-t border-white/5 flex items-center justify-around px-4 select-none relative z-50 backdrop-blur-md"
+              style={{ paddingBottom: 'env(safe-area-inset-bottom)', height: 'calc(4rem + env(safe-area-inset-bottom))' }}
+            >
               {[
                 { tab: 'home', label: 'Inicio', icon: <Home className="w-4.5 h-4.5" /> },
                 { tab: 'search', label: 'Buscar', icon: <Search className="w-4.5 h-4.5" /> },
@@ -399,6 +412,7 @@ export default function App() {
 
           {/* Extensions */}
           {activeExtensions.includes('neko-cat') && <NekoCat />}
+          {activeExtensions.includes('sleep-timer') && <SleepTimerWidget />}
         </>
       )}
 
