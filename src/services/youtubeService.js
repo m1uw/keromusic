@@ -78,12 +78,18 @@ export const youtubeService = {
   // Search songs on YouTube
   async search(query) {
     try {
-      // Append "music" to make results highly accurate to music tracks!
-      const targetQuery = query + ' audio';
-      const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(targetQuery)}`;
-      
-      const response = await fetch(url);
-      const html = await response.text();
+      let html = '';
+      if (window.electron) {
+        // Append "music" to make results highly accurate to music tracks!
+        const targetQuery = query + ' audio';
+        const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(targetQuery)}`;
+        const response = await fetch(url);
+        html = await response.text();
+      } else {
+        // Web browser visitor: fetch via CORS proxy server endpoint
+        const response = await fetch(`/api/youtube/search?q=${encodeURIComponent(query)}`);
+        html = await response.text();
+      }
       const data = extractYtInitialData(html);
       
       if (data) {
@@ -98,10 +104,17 @@ export const youtubeService = {
   // Fetch trending songs for the home page
   async getTrending() {
     try {
-      // Fetch YouTube Music trending charts
-      const url = 'https://www.youtube.com/feed/trending?bp=4gINGAEyBHRleHQ%3D'; // Music trending chart category
-      const response = await fetch(url);
-      const html = await response.text();
+      let html = '';
+      if (window.electron) {
+        // Fetch YouTube Music trending charts
+        const url = 'https://www.youtube.com/feed/trending?bp=4gINGAEyBHRleHQ%3D'; // Music trending chart category
+        const response = await fetch(url);
+        html = await response.text();
+      } else {
+        // Web browser visitor: fetch via CORS proxy server endpoint
+        const response = await fetch('/api/youtube/trending');
+        html = await response.text();
+      }
       const data = extractYtInitialData(html);
       
       const trendingSongs = [];

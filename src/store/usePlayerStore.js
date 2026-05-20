@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { usePartyStore } from './usePartyStore';
 
 let fadeIntervalId = null;
 
@@ -120,7 +121,7 @@ export const usePlayerStore = create((set, get) => ({
     }
     
     // Force sync for Listen Together
-    const partyStore = require('./usePartyStore').usePartyStore.getState();
+    const partyStore = usePartyStore.getState();
     if (partyStore.isHost) {
       partyStore.broadcastState({
         force: true,
@@ -169,7 +170,7 @@ export const usePlayerStore = create((set, get) => ({
     }
     
     // Force sync for Listen Together
-    const partyStore = require('./usePartyStore').usePartyStore.getState();
+    const partyStore = usePartyStore.getState();
     if (partyStore.isHost) {
       partyStore.broadcastState({
         force: true,

@@ -32,6 +32,42 @@ app.get('/api/sync/load/:googleId', (req, res) => {
   res.status(200).json(data);
 });
 
+// YouTube Scraping CORS Proxy endpoints for Web visitors
+app.get('/api/youtube/search', async (req, res) => {
+  const { q } = req.query;
+  if (!q) {
+    return res.status(400).json({ error: 'Missing query' });
+  }
+  try {
+    const targetQuery = q + ' audio';
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(targetQuery)}`;
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    const html = await response.text();
+    res.send(html);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/api/youtube/trending', async (req, res) => {
+  try {
+    const url = 'https://www.youtube.com/feed/trending?bp=4gINGAEyBHRleHQ%3D';
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+      }
+    });
+    const html = await response.text();
+    res.send(html);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Serve Vite frontend production build statically
 app.use((req, res, next) => {
   console.log(`[REQUEST] ${req.method} ${req.url}`);
