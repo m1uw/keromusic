@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kero Music</title>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="manifest" href="/manifest.json" />
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration failed:', err);
+          });
+        });
+      }
+    </script>
+    <style>
+      /* Prevent window dragging on specific elements, custom scrollbar */
+      body {
+        margin: 0;
+        background-color: #0b0b0b;
+        color: #ffffff;
+        overflow: hidden;
+        user-select: none;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0b0b0b;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #2a2a2a;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #ff0033;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
